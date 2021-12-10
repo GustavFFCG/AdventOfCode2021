@@ -9,12 +9,12 @@ type Rowstatus =
 
 module Rowstatus =
     let scoreCorrupted = function
-        | Incomplete _ -> 0
-        | Ok -> 0
-        | Corrupt ')' -> 3
-        | Corrupt ']' -> 57
-        | Corrupt '}' -> 1197
-        | Corrupt '>' -> 25137
+        | Incomplete _ -> None
+        | Ok -> None
+        | Corrupt ')' -> Some 3
+        | Corrupt ']' -> Some 57
+        | Corrupt '}' -> Some 1197
+        | Corrupt '>' -> Some 25137
         | Corrupt other -> failwith $"Unexpected corrupt char {other}"
 
     let scoreIncomplete = function
@@ -74,18 +74,20 @@ let fileName =
 let source = 
     File.ReadLines(fileName)
 
+let middleValue l =
+    let middleIndex = (Seq.length l - 1) /2
+    l |> Seq.sort |> Seq.item middleIndex
 
 source
 |> Seq.map Rowstatus.forString
-|> Seq.sumBy Rowstatus.scoreCorrupted
+|> Seq.map Rowstatus.scoreCorrupted
+|> Seq.choose id
+|> Seq.sum 
 |> printfn "Score for corrupt lines is %i"
 
 source
 |> Seq.map Rowstatus.forString
 |> Seq.map Rowstatus.scoreIncomplete
 |> Seq.choose id
-|> Seq.sort
-|> fun s -> 
-    let middleIndex = (Seq.length s - 1) /2
-    s |> Seq.item middleIndex
+|> middleValue
 |> printfn "Score to fix incomplete is %i"
