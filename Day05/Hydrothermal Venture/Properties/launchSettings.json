@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Hydrothermal Venture": {
+      "commandName": "Project",
+      "commandLineArgs": "\"C:\\Code\\AdventOfCode2021\\Day05\\Hydrothermal Venture\\input.txt\""
+    }
+  }
+}
