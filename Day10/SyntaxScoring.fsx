@@ -78,15 +78,15 @@ let middleValue l =
     let middleIndex = (Seq.length l - 1) /2
     l |> Seq.sort |> Seq.item middleIndex
 
-source
-|> Seq.map Rowstatus.forString
+let rowStatus = source |> Seq.map Rowstatus.forString
+
+rowStatus
 |> Seq.map Rowstatus.scoreCorrupted
 |> Seq.choose id
 |> Seq.sum 
 |> printfn "Score for corrupt lines is %i"
 
-source
-|> Seq.map Rowstatus.forString
+rowStatus
 |> Seq.map Rowstatus.scoreIncomplete
 |> Seq.choose id
 |> middleValue
