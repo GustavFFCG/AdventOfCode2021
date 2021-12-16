@@ -20,15 +20,46 @@ let toInput (strings: string seq) =
     |> Seq.map (fun s -> 
         s |> Seq.map (string >> Int32.Parse)
     ) |> array2D
-    
-let findPaths start target =
-    if start.x = target.x && start.y + 2 = target.y then
-        Some [ [Coord.ofxy start.x (start.y + 1); Coord.ofxy start.x (start.y + 2)] ]
-    else if start.x + 2 = target.x && start.y = target.y then
-        Some [ [Coord.ofxy (start.x + 1)  start.y; Coord.ofxy (start.x + 2) start.y] ]
-    else if start.x + 1 = target.x && start.y + 1 = target.y then
-        Some [ [Coord.ofxy (start.x + 1) start.y; Coord.ofxy (start.x + 1) (start.y + 1)]; [ Coord.ofxy start.x (start.y + 1); Coord.ofxy (start.x + 1) (start.y + 1)] ]
-    else None
+
+module CaveMap =
+    let array =
+        File.ReadLines fileName
+        |> toInput
+    let size = Array2D.length1 array
+    let adjacentCoordinates coord =
+        [
+            coord.x-1, coord.y
+            coord.x, coord.y-1; coord.x,coord.y+1
+            coord.x+1, coord.y
+        ]
+        |> List.map (fun (x,y) -> Coord.ofxy x y)
+        |> List.filter (fun c -> 
+            c.x >= 0 && c.y >= 0 && c.x < size && c.y < size)
+
+let rec findPaths path coord target =
+    let pathHere = coord :: path
+    if coord = target then
+        Some [pathHere]
+    else
+        let candidatePoints = CaveMap.adjacentCoordinates coord
+        if List.contains target candidatePoints then 
+            Some [target :: pathHere]
+        else
+            let pointIsInPath c =
+                List.contains c path
+            let pointIsAdjacentToPath c =
+                CaveMap.adjacentCoordinates c
+                |> List.exists (fun c' -> List.contains c' path)
+            candidatePoints
+            |> List.filter (fun c -> not(pointIsInPath c || pointIsAdjacentToPath c))
+            |> function
+                | [] -> None
+                | l -> 
+                    l
+                    |> List.map (fun c -> findPaths pathHere c target)
+                    |> List.choose id
+                    |> List.concat
+                    |> Some
 
 let riskLevel (arr: int[,]) (path:Coord list) =
     path
@@ -36,30 +67,23 @@ let riskLevel (arr: int[,]) (path:Coord list) =
 
 let diagonal length i  =
     seq{0..length - 1} |> List.ofSeq
-    |> List.map (fun x -> (x, 2*i - x ) )
-    |> List.filter (fun (x, y) -> x >= 0 && y >= 0 && x < length && y < length)
-
-module CaveMap =
-    let array =
-        File.ReadLines fileName
-        |> toInput
-    let size = Array2D.length1 array
-
+    |> List.map (fun x -> {x=x;y=2*i - x} )
+    |> List.filter (fun c -> c.x >= 0 && c.y >= 0 && c.x < length && c.y < length)
 
 let riskToDiagonal i (riskToPrevDiagonal:CoordinateRisk list): CoordinateRisk list =
     let risk coord =
         riskToPrevDiagonal
         |> List.map (fun risk ->
-            findPaths risk.Coord coord
+            findPaths [] risk.Coord coord
             |> Option.map (List.map (fun path -> 
-                risk.Risk + riskLevel CaveMap.array path))
+                    risk.Risk + riskLevel CaveMap.array path))
             |> Option.map List.min
         )
-        |> List.choose id 
+        |> List.choose id
         |> List.min
 
     diagonal CaveMap.size i
-    |> List.map (fun (x,y) -> { Coord={x=x; y=y}; Risk = risk (Coord.ofxy x y) } )
+    |> List.map (fun c -> { Coord=c; Risk = risk c } )
 
 let diagonalZero = [ {Coord={x=0; y=0}; Risk = 0 } ]
 
