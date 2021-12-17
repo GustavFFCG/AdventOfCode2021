@@ -43,8 +43,6 @@ module Position =
     let start = {x=0;y=0}
 
 let findSolutions targetArea =
-    let velocityWithMinimumElevation targetArea = {xspeed= targetArea.xmin; yspeed=targetArea.ymin}
-    
     let xspeedCandidates = 
         let workingXspeed xspeed =
             let rec hitsTarget x xspeed =
@@ -88,18 +86,21 @@ let highpoint (trajectory: Position list) =
     |> List.map (fun p -> p.y)
     |> List.max
 
-findSolutions sampleArea
+
+
+let sampleSolutions = findSolutions sampleArea
+let inputSolutions = findSolutions inputArea
+
+sampleSolutions
 |> Seq.map highpoint
 |> Seq.max
 |> printfn "Max y for sample is %i"
 
-let solutions = findSolutions inputArea
-
-solutions
+inputSolutions
 |> Seq.map highpoint
 |> Seq.max
-|> printfn "Max y for sample is %i"
+|> printfn "Max y for input is %i"
 
-solutions
+inputSolutions
 |> Seq.length
 |> printfn "Number of solutions is %i"
