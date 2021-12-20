@@ -35,7 +35,9 @@ module CaveMap =
     let arr =
         File.ReadLines fileName
         |> toInput
-    let size = arr |> Array2D.length1
+    //let size = arr |> Array2D.length1
+    let sampleSize = arr |> Array2D.length1
+    let size = sampleSize * 5
     
     let adjacentCoordinates coord =
         [
@@ -46,7 +48,10 @@ module CaveMap =
         |> List.map (fun (x,y) -> Coord.ofxy x y)
         |> List.filter (fun c -> 
             c.x >= 0 && c.y >= 0 && c.x < size && c.y < size)
-    let localRisk coord = arr.[coord.x, coord.y]
+    let localRisk coord = 
+        let factor = coord.x / sampleSize + coord.y / sampleSize
+        (arr.[coord.x % sampleSize, coord.y % sampleSize] + factor) % 9
+        |> function | 0 -> 9 | i -> i
     let aggregateRisk coord m = m |> Map.tryFind coord |> Option.defaultValue Unknown
     
     let isComplete (m: Map<Coord,AggregateRisk>) = 
@@ -54,6 +59,8 @@ module CaveMap =
     
 
 let rec dijkstra  (cave: Map<Coord,AggregateRisk>) =
+    let progress = cave |> Map.count
+    if progress % 1000 = 0 then printfn "Working... %i done" progress
     if CaveMap.isComplete cave then cave
     else
         let minFinalNode = 
